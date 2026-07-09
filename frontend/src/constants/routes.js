@@ -1,0 +1,17 @@
+export const ROUTES = {
+  HOME: "/",
+  LOGIN: "/login",
+  OPERATOR: "/operator",
+  OPERATOR_DASHBOARD: "/operator",
+  OPERATOR_INSPECTION: "/operator/inspection/:id",
+  OPERATOR_REVIEW: "/operator/review/:id",
+  MANAGER: "/manager",
+  MANAGER_DASHBOARD: "/manager",
+  MANAGER_MONITOR: "/monitor",
+  MANAGER_INSPECTION_DETAILS: "/monitor/inspection/:id",
+  MANAGER_CHECKLIST: "/manager/checklist",
+  ADMIN: "/admin",
+  ADMIN_DASHBOARD: "/admin",
+  ADMIN_USERS: "/admin/users",
+  ADMIN_AUDIT: "/admin/audit",
+};
