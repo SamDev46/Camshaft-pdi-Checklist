@@ -13,12 +13,14 @@ export const startInspection = async (qrText) => {
 };
 
 export const getChecklist = async () => {
-  const res = await apiClient.get("/operator/checklist");
+  const endpoint = getRole() === "MANAGER" ? "/manager/checklist" : "/operator/checklist";
+  const res = await apiClient.get(endpoint);
   return res.data;
 };
 
 export const getInspection = async (id) => {
-  const res = await apiClient.get(`/operator/inspection/${id}`);
+  const endpoint = getRole() === "MANAGER" ? `/manager/inspection/${id}` : `/operator/inspection/${id}`;
+  const res = await apiClient.get(endpoint);
   return res.data;
 };
 

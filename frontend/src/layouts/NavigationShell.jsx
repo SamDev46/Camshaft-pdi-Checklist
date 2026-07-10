@@ -16,14 +16,16 @@ export const NavigationShell = ({ children }) => {
     <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
       <AppBar position="static" color="primary" elevation={1}>
         <Toolbar>
-          <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: "bold", cursor: "pointer" }} onClick={() => {
+          <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1, cursor: "pointer" }} onClick={() => {
             if (isOperator) navigate(ROUTES.OPERATOR_DASHBOARD);
             else if (isManager) navigate(ROUTES.MANAGER_DASHBOARD);
             else if (isAdmin) navigate(ROUTES.ADMIN_DASHBOARD);
           }}>
-            CamTrace
-          </Typography>
-          
+            <img src="/cummins.png" alt="Cummins Logo" style={{ height: 40, marginRight: 16, objectFit: 'contain' }} />
+            <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+              Camshaft Pre-Dispatch Inspection
+            </Typography>
+          </Box>
           {isOperator && (
             <Box sx={{ display: "flex", gap: 2, mr: 4 }}>
                 <Button color="inherit" variant={location.pathname === ROUTES.OPERATOR_DASHBOARD ? "outlined" : "text"} onClick={() => navigate(ROUTES.OPERATOR_DASHBOARD)}>

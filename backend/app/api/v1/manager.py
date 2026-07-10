@@ -5,6 +5,7 @@ from app.schemas.manager import DashboardStatsResponse, ChecklistCreate, Checkli
 from app.schemas.operator import ResponseSaveRequest
 from app.services import manager_service, operator_service
 from app.models.user import User
+from app.utils.helpers import log_audit
 
 router = APIRouter(tags=["manager"])
 
@@ -37,11 +38,9 @@ def delete_checklist(item_id: int, current_user: User = Depends(require_role("MA
     manager_service.delete_checklist(db, current_user.user_id, item_id)
     return {"message": "Deleted"}
 
-# Operator Mode Wrappers
 @router.put("/inspection/response")
 def save_response(req: ResponseSaveRequest, current_user: User = Depends(require_role("MANAGER")), db: Session = Depends(get_db)):
-    # Log Manager Operator Mode if this is the first interaction
-    manager_service.log_audit(db, current_user.user_id, "INSPECTION", req.inspection_id, "MANAGER_ENTERED_OPERATOR_MODE", "Manager interacted with inspection")
+    log_audit(db, current_user.user_id, "INSPECTION", req.inspection_id, "MANAGER_ENTERED_OPERATOR_MODE", "Manager interacted with inspection")
     db.commit()
     return operator_service.save_response(db, current_user.user_id, req, role="MANAGER")
 

@@ -44,8 +44,8 @@ export const AppRoutes = () => {
         
         {/* Operator Routes */}
         <Route path={ROUTES.OPERATOR_DASHBOARD} element={<ProtectedRoute allowedRoles={["OPERATOR"]}><LazyLoader><OperatorDashboard /></LazyLoader></ProtectedRoute>} />
-        <Route path={ROUTES.OPERATOR_INSPECTION} element={<ProtectedRoute allowedRoles={["OPERATOR"]}><LazyLoader><Inspection /></LazyLoader></ProtectedRoute>} />
-        <Route path={ROUTES.OPERATOR_REVIEW} element={<ProtectedRoute allowedRoles={["OPERATOR"]}><LazyLoader><InspectionReview /></LazyLoader></ProtectedRoute>} />
+        <Route path={ROUTES.OPERATOR_INSPECTION} element={<ProtectedRoute allowedRoles={["OPERATOR", "MANAGER"]}><LazyLoader><Inspection /></LazyLoader></ProtectedRoute>} />
+        <Route path={ROUTES.OPERATOR_REVIEW} element={<ProtectedRoute allowedRoles={["OPERATOR", "MANAGER"]}><LazyLoader><InspectionReview /></LazyLoader></ProtectedRoute>} />
 
         {/* Manager Routes */}
         <Route path={ROUTES.MANAGER_DASHBOARD} element={<ProtectedRoute allowedRoles={["MANAGER"]}><LazyLoader><ManagerDashboard /></LazyLoader></ProtectedRoute>} />

@@ -13,8 +13,12 @@ def parse_qr(qr_text: str):
 
 def process_inspection_qr(db: Session, user_id: int, qr_text: str):
     part, serial, vendor = parse_qr(qr_text)
-    # Check existing
-    inspection = db.query(Inspection).filter(Inspection.part_number == part, Inspection.serial_number == serial).first()
+    # Only resume if IN_PROGRESS — submitted inspections are read-only
+    inspection = db.query(Inspection).filter(
+        Inspection.part_number == part,
+        Inspection.serial_number == serial,
+        Inspection.status == "IN_PROGRESS"
+    ).first()
     if inspection:
         log_audit(db, user_id, "INSPECTION", inspection.inspection_id, "INSPECTION_RESUMED", f"Resumed inspection for {part}-{serial}")
         db.commit()
@@ -38,7 +42,18 @@ def get_inspection(db: Session, inspection_id: int):
         raise HTTPException(status_code=404, detail="Inspection not found")
     
     responses = db.query(Response).filter(Response.inspection_id == inspection_id).all()
-    res_list = [{"checklist_id": r.checklist_id, "result": r.result, "description": r.description, "photo_id": r.photo_id} for r in responses]
+    photos = db.query(Photo).filter(Photo.inspection_id == inspection_id).all()
+    
+    res_dict = {r.checklist_id: {"checklist_id": r.checklist_id, "result": r.result, "description": r.description, "photo_id": r.photo_id} for r in responses}
+    
+    # Merge photos that were uploaded before a response was saved
+    for p in photos:
+        if p.checklist_id not in res_dict:
+            res_dict[p.checklist_id] = {"checklist_id": p.checklist_id, "result": None, "description": "", "photo_id": p.photo_id}
+        elif not res_dict[p.checklist_id]["photo_id"]:
+            res_dict[p.checklist_id]["photo_id"] = p.photo_id
+            
+    res_list = list(res_dict.values())
     
     return {
         "inspection_id": inspection.inspection_id,
@@ -56,13 +71,19 @@ def save_response(db: Session, user_id: int, req: ResponseSaveRequest, role: str
     
     response = db.query(Response).filter(Response.inspection_id == req.inspection_id, Response.checklist_id == req.checklist_id).first()
     
+    photo = db.query(Photo).filter(Photo.inspection_id == req.inspection_id, Photo.checklist_id == req.checklist_id).order_by(Photo.photo_id.desc()).first()
+    current_photo_id = req.photo_id or (photo.photo_id if photo else None)
+    
     if response:
         response.result = req.result
         response.description = req.description
-        if req.photo_id: response.photo_id = req.photo_id
+        if current_photo_id: 
+            response.photo_id = current_photo_id
         response.updated_at = datetime.utcnow()
     else:
-        response = Response(**req.model_dump())
+        resp_data = req.model_dump()
+        resp_data["photo_id"] = current_photo_id
+        response = Response(**resp_data)
         db.add(response)
     
     chk = db.query(Checklist).filter(Checklist.checklist_id == req.checklist_id).first()

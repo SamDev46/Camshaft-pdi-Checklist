@@ -83,7 +83,7 @@ export const InspectionMonitor = () => {
           value={search} 
           onChange={e => setSearch(e.target.value)}
           sx={{ mb: 3, width: 300 }}
-          InputProps={{ startAdornment: <InputAdornment position="start"><Search size={20}/></InputAdornment> }}
+          slotProps={{ input: { startAdornment: <InputAdornment position="start"><Search size={20}/></InputAdornment> } }}
       />
       
       {loading ? <TableSkeleton columns={6} rows={10} /> : (

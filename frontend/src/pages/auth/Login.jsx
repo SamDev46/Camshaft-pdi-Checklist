@@ -37,8 +37,11 @@ export const Login = () => {
 
   return (
     <BaseCard sx={{ width: "100%", maxWidth: 450, mx: "auto", mt: 10, p: 2 }}>
-      <Typography variant="h5" gutterBottom align="center" sx={{ mb: 3 }}>
-        CamTrace Login
+      <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+        <img src="/cummins.png" alt="Cummins Logo" style={{ height: 60, objectFit: 'contain' }} />
+      </Box>
+      <Typography variant="h5" gutterBottom align="center" sx={{ mb: 3, fontWeight: 'bold' }}>
+        Camshaft Pre-Dispatch Inspection Login
       </Typography>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       <form onSubmit={handleSubmit}>
