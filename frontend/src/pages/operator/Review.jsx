@@ -38,7 +38,14 @@ export const Review = () => {
           showSnackbar("Inspection Submitted Successfully!", "success");
           navigate(ROUTES.OPERATOR);
       } catch (err) {
-          setError(err.response?.data?.detail || "Submission failed. Please ensure all questions are answered.");
+          const errMsg = err.response?.data?.detail || "Submission failed. Please ensure all questions are answered.";
+          const match = errMsg.match(/question (\d+)/i);
+          if (match) {
+              showSnackbar(errMsg, "error");
+              navigate(`/operator/inspection/${id}?q=${match[1]}`);
+          } else {
+              setError(errMsg);
+          }
       } finally {
           setSubmitting(false);
       }
@@ -61,7 +68,14 @@ export const Review = () => {
             const r = inspection.responses.find(res => res.checklist_id === c.checklist_id) || {};
             return (
                 <Box key={c.checklist_id} sx={{ mb: 3 }}>
-                    <Typography variant="h6" sx={{ mb: 1 }}>{idx + 1}. {c.question}</Typography>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+                        <Typography variant="h6">{idx + 1}. {c.question}</Typography>
+                        {!isSubmitted && (
+                            <Button size="small" onClick={() => navigate(`/operator/inspection/${id}?q=${c.sequence_no}`)}>
+                                Edit
+                            </Button>
+                        )}
+                    </Box>
                     <Box sx={{ display: "flex", gap: 3, alignItems: "center" }}>
                         <Typography variant="body1" fontWeight="bold" color={r.result === "NOT_OK" ? "error" : "success.main"}>
                             {r.result || "PENDING"}

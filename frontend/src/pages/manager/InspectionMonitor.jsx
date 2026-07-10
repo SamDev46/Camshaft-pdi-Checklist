@@ -5,8 +5,8 @@ import { useNavigate } from "react-router-dom";
 import { getInspections } from "../../api/manager";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
-import { jsPDF } from "jspdf";
-import "jspdf-autotable";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import { TableSkeleton } from "../../components/common/TableSkeleton";
 import { EmptyState } from "../../components/common/EmptyState";
 import { ErrorState } from "../../components/common/ErrorState";
@@ -57,7 +57,7 @@ export const InspectionMonitor = () => {
     const doc = new jsPDF();
     doc.text("Inspection Report", 14, 15);
     const body = filtered.map(i => [i.inspection_id, i.part_number, i.serial_number, i.operator_name, i.status, new Date(i.started_at).toLocaleString()]);
-    doc.autoTable({
+    autoTable(doc, {
       head: [["ID", "Part", "Serial", "Operator", "Status", "Started"]],
       body,
       startY: 20

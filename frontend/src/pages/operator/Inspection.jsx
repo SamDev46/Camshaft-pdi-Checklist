@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { Box, Typography, Button, CircularProgress, LinearProgress, TextField } from "@mui/material";
 import { Camera, ArrowRight, ArrowLeft, X } from "lucide-react";
 import { getInspection, getChecklist, saveResponse, uploadPhoto, deletePhoto } from "../../api/operator";
@@ -9,21 +9,33 @@ import { API_BASE_URL } from "../../constants/api";
 export const Inspection = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { showSnackbar } = useSnackbar();
   const [loading, setLoading] = useState(true);
   const [inspection, setInspection] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [currentIdx, setCurrentIdx] = useState(0);
+  const [hasInitialized, setHasInitialized] = useState(false);
   const [resSaving, setResSaving] = useState(false);
   const [photoSaving, setPhotoSaving] = useState(false);
   const fileInputRef = useRef(null);
-  const descRef = useRef("");
 
   const load = async () => {
     try {
       const [ins, chk] = await Promise.all([getInspection(id), getChecklist()]);
       setInspection(ins);
       setQuestions(chk);
+      
+      // Only set the initial index once on first load
+      if (!hasInitialized && chk.length > 0) {
+        let targetIdx = Math.max(0, (ins.current_step || 1) - 1);
+        const qParam = searchParams.get("q");
+        if (qParam && !isNaN(parseInt(qParam))) {
+            targetIdx = parseInt(qParam) - 1;
+        }
+        setCurrentIdx(Math.min(Math.max(0, targetIdx), chk.length - 1));
+        setHasInitialized(true);
+      }
     } catch (e) {
       showSnackbar("Failed to load inspection.", "error");
     } finally {
@@ -55,7 +67,7 @@ export const Inspection = () => {
   const handleResult = async (resValue) => {
     setResSaving(true);
     try {
-      const desc = descRef.current || response.description || "";
+      const desc = response.description || "";
       await saveResponse({ inspection_id: parseInt(id), checklist_id: q.checklist_id, result: resValue, description: desc });
       await load();
     } catch (e) {
@@ -67,7 +79,6 @@ export const Inspection = () => {
 
   const handleDescChange = async (e) => {
     const val = e.target.value;
-    descRef.current = val;
     if (!response.result) return;
     try {
       await saveResponse({ inspection_id: parseInt(id), checklist_id: q.checklist_id, result: response.result, description: val });
@@ -122,39 +133,39 @@ export const Inspection = () => {
 
   const canProceed = response.result &&
     !(q.photo_required === 1 && !response.photo_id) &&
-    !(response.result === "NOT_OK" && !response.description);
+    !(response.result === "NOT_OK" && (!response.description || response.description.trim() === ""));
 
   return (
     <Box sx={{ height: "100vh", display: "flex", flexDirection: "column", overflow: "hidden", bgcolor: "#f5f5f5" }}>
 
       {/* Top bar */}
-      <Box sx={{ bgcolor: "white", px: 3, py: 1.5, borderBottom: "1px solid #e0e0e0", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
-        <Typography variant="subtitle1" fontWeight="bold">Part: {inspection.part_number}</Typography>
-        <Typography variant="body2" color="text.secondary">Serial: {inspection.serial_number}</Typography>
+      <Box sx={{ bgcolor: "white", px: 2, py: 1, borderBottom: "1px solid #e0e0e0", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
+        <Typography variant="subtitle2" fontWeight="bold">Part: {inspection.part_number}</Typography>
+        <Typography variant="caption" color="text.secondary">Serial: {inspection.serial_number}</Typography>
       </Box>
 
       {/* Progress bar */}
       <Box sx={{ flexShrink: 0 }}>
-        <LinearProgress variant="determinate" value={progress} sx={{ height: 6 }} />
+        <LinearProgress variant="determinate" value={progress} sx={{ height: 4 }} />
         <Typography variant="caption" sx={{ display: "block", textAlign: "center", py: 0.5, color: "text.secondary", bgcolor: "white", borderBottom: "1px solid #e0e0e0" }}>
           Question {currentIdx + 1} of {questions.length}
         </Typography>
       </Box>
 
-      {/* Main content — no scroll */}
-      <Box sx={{ flex: 1, display: "flex", flexDirection: "column", maxWidth: 700, width: "100%", mx: "auto", px: 3, py: 2, gap: 2, overflow: "hidden" }}>
+      {/* Main content — strictly flex, no scroll */}
+      <Box sx={{ flex: 1, display: "flex", flexDirection: "column", maxWidth: 700, width: "100%", mx: "auto", px: 2, py: 1.5, gap: 1.5, overflow: "hidden" }}>
 
         {/* Question */}
-        <Typography variant="h5" fontWeight={500} sx={{ lineHeight: 1.4 }}>
+        <Typography variant="h6" fontWeight={500} sx={{ lineHeight: 1.3, flexShrink: 0 }}>
           {q.question}
         </Typography>
 
         {/* OK / NOT OK buttons */}
-        <Box sx={{ display: "flex", gap: 2 }}>
+        <Box sx={{ display: "flex", gap: 1.5, flexShrink: 0 }}>
           <Button
             variant={response.result === "OK" ? "contained" : "outlined"}
             color="success"
-            sx={{ flex: 1, py: 2, fontSize: "1.1rem", fontWeight: 700 }}
+            sx={{ flex: 1, py: 1.5, fontSize: "1.1rem", fontWeight: 700 }}
             onClick={() => handleResult("OK")}
             disabled={resSaving}
           >
@@ -163,7 +174,7 @@ export const Inspection = () => {
           <Button
             variant={response.result === "NOT_OK" ? "contained" : "outlined"}
             color="error"
-            sx={{ flex: 1, py: 2, fontSize: "1.1rem", fontWeight: 700 }}
+            sx={{ flex: 1, py: 1.5, fontSize: "1.1rem", fontWeight: 700 }}
             onClick={() => handleResult("NOT_OK")}
             disabled={resSaving}
           >
@@ -180,7 +191,6 @@ export const Inspection = () => {
           value={response.description || ""}
           onBlur={handleDescChange}
           onChange={(e) => {
-            descRef.current = e.target.value;
             const updated = { ...inspection };
             const idx = updated.responses.findIndex(r => r.checklist_id === q.checklist_id);
             if (idx >= 0) updated.responses[idx].description = e.target.value;
@@ -188,10 +198,11 @@ export const Inspection = () => {
             setInspection(updated);
           }}
           size="small"
+          sx={{ flexShrink: 0 }}
         />
 
         {/* Photo row */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexShrink: 0 }}>
           {photoSaving ? (
             <CircularProgress size={22} />
           ) : response.photo_id ? (
@@ -199,7 +210,7 @@ export const Inspection = () => {
               <img
                 src={`${API_BASE_URL}/operator/photos/${response.photo_id}`}
                 alt="Attached"
-                style={{ height: 52, width: 52, objectFit: "cover", borderRadius: 6, border: "1px solid #e0e0e0" }}
+                style={{ height: 48, width: 48, objectFit: "cover", borderRadius: 6, border: "1px solid #e0e0e0" }}
               />
               <Button
                 size="small"
@@ -224,11 +235,11 @@ export const Inspection = () => {
           <input type="file" hidden ref={fileInputRef} accept="image/jpeg,image/jpg,image/png" onChange={handlePhotoUpload} />
         </Box>
 
-        {/* Spacer */}
-        <Box sx={{ flex: 1 }} />
+        {/* Spacer forces navigation to bottom */}
+        <Box sx={{ flex: 1, minHeight: 0 }} />
 
         {/* Navigation */}
-        <Box sx={{ display: "flex", gap: 2, flexShrink: 0 }}>
+        <Box sx={{ display: "flex", gap: 1.5, flexShrink: 0 }}>
           <Button
             variant="outlined"
             size="large"
