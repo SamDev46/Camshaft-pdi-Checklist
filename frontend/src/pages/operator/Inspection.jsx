@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { Box, Typography, Button, CircularProgress, LinearProgress, TextField } from "@mui/material";
-import { Camera, ArrowRight, ArrowLeft, X } from "lucide-react";
+import { Camera, ArrowRight, ArrowLeft, X, Upload } from "lucide-react";
 import { getInspection, getChecklist, saveResponse, uploadPhoto, deletePhoto } from "../../api/operator";
 import { useSnackbar } from "../../context/SnackbarContext";
 import { API_BASE_URL } from "../../constants/api";
+import { CameraCaptureDialog } from "../../components/operator/CameraCaptureDialog";
 
 export const Inspection = () => {
   const { id } = useParams();
@@ -18,6 +19,7 @@ export const Inspection = () => {
   const [hasInitialized, setHasInitialized] = useState(false);
   const [resSaving, setResSaving] = useState(false);
   const [photoSaving, setPhotoSaving] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
   const fileInputRef = useRef(null);
 
   const load = async () => {
@@ -89,13 +91,18 @@ export const Inspection = () => {
   const handlePhotoUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    await processFileUpload(file);
+    e.target.value = "";
+  };
+
+  const processFileUpload = async (file) => {
     if (!["image/jpeg", "image/jpg", "image/png"].includes(file.type)) {
       showSnackbar("Only JPG/JPEG/PNG allowed.", "error");
-      e.target.value = ""; return;
+      return;
     }
     if (file.size > 10 * 1024 * 1024) {
       showSnackbar("File too large. Max 10MB.", "error");
-      e.target.value = ""; return;
+      return;
     }
     setPhotoSaving(true);
     try {
@@ -105,7 +112,6 @@ export const Inspection = () => {
       showSnackbar("Failed to upload photo.", "error");
     } finally {
       setPhotoSaving(false);
-      e.target.value = "";
     }
   };
 
@@ -223,14 +229,24 @@ export const Inspection = () => {
               </Button>
             </>
           ) : (
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<Camera size={16} />}
-              onClick={() => fileInputRef.current.click()}
-            >
-              Add Photo{q.photo_required === 1 ? " *" : ""}
-            </Button>
+            <>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<Camera size={16} />}
+                onClick={() => setCameraOpen(true)}
+              >
+                Use Camera{q.photo_required === 1 ? " *" : ""}
+              </Button>
+              <Button
+                variant="text"
+                size="small"
+                startIcon={<Upload size={16} />}
+                onClick={() => fileInputRef.current.click()}
+              >
+                Upload File
+              </Button>
+            </>
           )}
           <input type="file" hidden ref={fileInputRef} accept="image/jpeg,image/jpg,image/png" onChange={handlePhotoUpload} />
         </Box>
@@ -262,6 +278,15 @@ export const Inspection = () => {
           </Button>
         </Box>
       </Box>
+
+      <CameraCaptureDialog 
+        open={cameraOpen} 
+        onClose={() => setCameraOpen(false)}
+        onAccept={(file) => {
+          setCameraOpen(false);
+          processFileUpload(file);
+        }}
+      />
     </Box>
   );
 };
