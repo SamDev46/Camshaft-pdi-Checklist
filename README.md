@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # CamTrace v1.0
 
 CamTrace is a robust, production-ready enterprise application for monitoring camshaft inspections on the production floor.
@@ -36,3 +37,6 @@ camtrace/
 
 ## License
 Confidential / Enterprise Internal Use Only.
+=======
+# Camshaft-pdi-Checklist
+>>>>>>> 0d5139db7477a2f18dcf34bb609346e12ad68a76
